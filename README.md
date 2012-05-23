@@ -1,4 +1,4 @@
-# Wego
+# Wego [![Build Status](https://secure.travis-ci.org/jch/rack-stream.png?branch=master)](http://travis-ci.org/jch/rack-stream)
 
 ruby client to [Wego](http://www.wego.com/) API.
 
