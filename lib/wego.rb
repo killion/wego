@@ -11,7 +11,13 @@ module Wego
   end
 
   def config(options = {})
-    @configuration ||= Configuration.new(options)
+    if @configuration
+      options = Hashie::Mash.new(options).to_hash
+      Configuration.new(@configuration.to_hash.merge(options))
+    else
+      @configuration = Configuration.new(options)
+    end
+    @configuration = @configuration && @configuration.merge(options) || Configuration.new(options)
   end
   module_function :configure, :config
 
