@@ -1,6 +1,7 @@
 require "wego/version"
 
 require "uri"
+require "logger"
 require "hashie"
 require "hashie/rash"
 require "faraday"
@@ -10,7 +11,14 @@ require "active_support/core_ext/object/to_query"
 require 'wego/flights'
 
 module Wego
+  # @see Wego::Configuration
   def configure(options = {})
+    unless options[:logger]
+      logger = Logger.new(STDERR)
+      logger.level = Logger::WARN
+      options[:logger] = logger
+    end
+
     config(options)
     yield config if block_given?
     config
@@ -25,10 +33,16 @@ module Wego
     end
     @configuration = @configuration && @configuration.merge(options) || Configuration.new(options)
   end
-  module_function :configure, :config
+
+  # @return [Logger]
+  def log
+    config.logger
+  end
+  module_function :configure, :config, :log
 
   class Configuration < Hashie::Dash
     property :api_key, :required => true
+    property :logger
   end
 
   # Base class for all Wego errors
