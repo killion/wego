@@ -1,6 +1,11 @@
 require "wego/version"
+
+require "uri"
 require "hashie"
 require "hashie/rash"
+require "faraday"
+require "multi_json"
+require "active_support/core_ext/object/to_query"
 
 require 'wego/flights'
 
@@ -32,6 +37,9 @@ module Wego
     end
 
     class InvalidParameter < Error
+    end
+
+    class Timeout < Error
     end
   end
 end
