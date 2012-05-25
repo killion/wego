@@ -19,7 +19,7 @@ Or install it yourself as:
 
     $ gem install wego
 
-## Usage
+## Basic Example
 
 ```ruby
 require 'wego'
@@ -57,6 +57,14 @@ end
 Wego recommends waiting for at least 10 seconds before trying to pull results.
 This gem will poll for results using a periodic EventMachine timer.
 It is Fiber aware and can be used with em-synchrony.
+
+## Development
+
+To run integration tests locally, set WEGO_API environment variable and run:
+
+```sh
+WEGO_API=yourapikey rspec spec/integration
+```
 
 ## Contributing
 
