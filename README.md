@@ -2,8 +2,8 @@
 
 ruby client to [Wego](http://www.wego.com/) API.
 
-[Wego Flights Documentation](http://www.wego.com/api/flights/docs)
-[Wego Hotels Documentation](http://www.wego.com/api/hotels/docs)
+* [Wego Flights Documentation](http://www.wego.com/api/flights/docs)
+* [Wego Hotels Documentation](http://www.wego.com/api/hotels/docs)
 
 ## Installation
 
