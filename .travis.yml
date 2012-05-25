@@ -4,4 +4,5 @@ rvm:
 
 bundler_args: --without darwin --without development
 
-script: "bundle exec rspec"
+# skip spec/integration tests on travis because it requires an API key
+script: "bundle exec rspec --pattern spec/lib/**/*_spec.rb"
