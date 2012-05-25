@@ -2,14 +2,17 @@ source 'https://rubygems.org'
 
 gemspec
 
-group :development, :test do
+group :development do
   gem 'rake'
-  gem 'rspec', '~> 2'
   gem 'yard'
 
   gem 'guard'
   gem 'guard-bundler'
   gem 'guard-rspec'
+end
+
+group :development, :test do
+  gem 'rspec', '~> 2'
 end
 
 group :debugger do
