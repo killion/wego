@@ -1,5 +1,6 @@
 require "wego/version"
 require "hashie"
+require "hashie/rash"
 
 require 'wego/flights'
 

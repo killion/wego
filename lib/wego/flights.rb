@@ -17,7 +17,14 @@ module Wego
       end
     end
 
-    class Usage
+    class Usage < Hashie::Rash
+      def used
+        api_usage_data.usage_count.value
+      end
+
+      def max
+        api_usage_data.max_count.value
+      end
     end
 
     class Search

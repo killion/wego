@@ -16,4 +16,5 @@ Gem::Specification.new do |gem|
   gem.version       = Wego::VERSION
 
   gem.add_dependency "hashie"
+  gem.add_dependency "rash"
 end
