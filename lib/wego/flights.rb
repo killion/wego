@@ -84,7 +84,9 @@ module Wego
 
           poll_timer = EM.add_periodic_timer(@options[:pull_wait]) do
             res = @http.get('/pull.html', params).body.response
-            search.itineraries += res.itineraries  # TODO: build Itinerary objects
+
+            # TODO: sometimes result hash is blank
+            search.itineraries += res.itineraries.map {|i| Itinerary.new(i)}
             tries += 1
             if !res.pending_results || tries >= @options[:pull_count]
               poll_timer.cancel
@@ -187,19 +189,15 @@ Wego API Exception
       end
     end
 
-    class Search < Hashie::Rash
+    class Search
       attr_accessor :itineraries
 
-      def initialize(hash = {})
-        super
+      def initialize
         @itineraries = []
       end
     end
 
-    class Itinerary
-      def initialize
-      end
-
+    class Itinerary < Hashie::Rash
       # @param [Boolean] refresh - do not return cached results
       # @return [Array] inbound Segments
       def inbound_segments(refresh = false)
@@ -215,7 +213,7 @@ Wego API Exception
       end
 
       # calling on detail methods will do a fetch and memoize the results
-      class Segment
+      class Segment < Hashie::Rash
       end
     end
   end

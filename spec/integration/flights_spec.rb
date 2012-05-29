@@ -10,4 +10,28 @@ describe Wego::Flights do
     u.used.should be_kind_of(Fixnum)
     u.max.should  be_kind_of(Fixnum)
   end
+
+  context 'search' do
+    let(:client) {
+      Wego::Flights::Client.new(:pull_wait => 4.0, :pull_count => 2)
+    }
+
+    let(:params) do
+      {
+        :from_location => 'LAX',
+        :to_location   => 'SFO',
+        :trip_type     => 'roundTrip',
+        :cabin_class   => 'Economy',
+        :inbound_date  => '2012-09-07',
+        :outbound_date => '2012-09-05',
+        :num_adults    => '1',
+        :num_children  => '0'
+      }
+    end
+
+    it 'should work' do
+      s = client.search(params)
+      s.itineraries.should_not be_empty
+    end
+  end
 end
