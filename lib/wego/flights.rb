@@ -76,13 +76,12 @@ module Wego
       # @option params monetized_partners - If this field is omitted, all partners results are returned. If true is given, only monetized partners are returned. If false is given, only non monetized partners are returned. Possible values: true, false
       # @see http://www.wego.com/api/flights/docs#api_pull
       def pull(params)
-        params = Hashie::Camel.new(params)
-        search = Search.new
-        tries  = 0
+        with_event_machine do
+          params = Hashie::Camel.new(params)
+          search = Search.new
+          tries  = 0
+          fiber  = Fiber.current
 
-        # code to schedule on EM to fetch results
-        fetch  = proc {
-          fiber      = Fiber.current
           poll_timer = EM.add_periodic_timer(@options[:pull_wait]) do
             res = @http.get('/pull.html', params).body.response
             search.itineraries += res.itineraries  # TODO: build Itinerary objects
@@ -92,23 +91,26 @@ module Wego
               fiber.resume search
             end
           end
-          Fiber.yield  # populated Search object
-        }
 
+          Fiber.yield  # populated Search object
+        end
+      end
+
+      def with_event_machine(&blk)
         # Note: avoid synchronous logging or other synchronous actions
         # in the following block
         if !EM.reactor_running?
           EM.run do
             Fiber.new {
-              fetch.call
+              blk.call
               EM.stop
             }.resume
           end
         else
           Fiber.new {
-            fetch.call
+            blk.call
           }.resume
-        end
+        end        
       end
 
       class HttpMiddleware < Faraday::Middleware
