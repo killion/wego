@@ -1,5 +1,8 @@
 require "wego/version"
 
+require "fiber"
+require "eventmachine"
+
 require "uri"
 require "logger"
 require "hashie"
