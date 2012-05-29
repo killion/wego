@@ -99,18 +99,20 @@ module Wego
       def with_event_machine(&blk)
         # Note: avoid synchronous logging or other synchronous actions
         # in the following block
+        result = nil
         if !EM.reactor_running?
           EM.run do
             Fiber.new {
-              blk.call
+              result = blk.call
               EM.stop
             }.resume
           end
         else
           Fiber.new {
-            blk.call
+            result = blk.call
           }.resume
-        end        
+        end
+        result
       end
 
       class HttpMiddleware < Faraday::Middleware
