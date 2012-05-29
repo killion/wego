@@ -103,6 +103,16 @@ module Wego
         end
       end
 
+      # @param [Hash] params
+      # @option params :instance_id - required Instance Id returned by the startSearch API request.
+      # @option params :itinerary_id - required Itinerary Id in Itinerary response
+      # @option params :outbound_date - required yyyy-MM-dd
+      # @option params :inbound_date - yyyy-MM-dd
+      def details(params)
+        params = Hashie::Camel.new(params)
+        @http.get('/details.html', params).body.details
+      end
+
       def with_event_machine(&blk)
         # Note: avoid synchronous logging or other synchronous actions
         # in the following block
