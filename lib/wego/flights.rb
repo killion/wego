@@ -62,7 +62,7 @@ module Wego
 
         pull_params = {
           :instance_id => res.body.request.instance_id,
-          :rand        => 'abc',  # TODO: uuid generator
+          :rand        => UUID.generate(:compact)
         }
         pull_params[:monetized_partners] = params[:monetized_partners] if params[:monetized_partners]
         pull(pull_params)
@@ -72,7 +72,7 @@ module Wego
 
       # @param [Hash] params
       # @option params instanceId - required - Instance Id returned by the startSearch API request.
-      # @option params random - required - a random alpha-numeric value. The rand parameter used is used in conjunction with the instanceId parameter to form a unique key that will keep track of number of results returned to the client for a given session. Important: If you wish to start polling from the very first result then issue a new rand value, otherwise continue using the same rand till you reach the end of result list.
+      # @option params rand - required - a random alpha-numeric value. The rand parameter used is used in conjunction with the instanceId parameter to form a unique key that will keep track of number of results returned to the client for a given session. Important: If you wish to start polling from the very first result then issue a new rand value, otherwise continue using the same rand till you reach the end of result list.
       # @option params monetized_partners - If this field is omitted, all partners results are returned. If true is given, only monetized partners are returned. If false is given, only non monetized partners are returned. Possible values: true, false
       # @see http://www.wego.com/api/flights/docs#api_pull
       def pull(params)
