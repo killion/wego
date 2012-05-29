@@ -10,8 +10,9 @@ module Wego
       client.usage
     end
 
+    # @return [Client]
     def client(options = {})
-      @client ||= Client.new(:api_key => Wego.config.api_key)
+      @client ||= Client.new({:api_key => Wego.config.api_key}.merge(options))
     end
     module_function :search, :usage, :client
 
@@ -44,16 +45,16 @@ module Wego
       end
 
       # @param [Hash] params - can be camelCase or under_score
-      # @option params formLocation - required - 3-letter IATA airport code (e.g. SIN)
-      # @option params toLocation - required - 3-letter IATA airport code (e.g. BKK)
-      # @option params tripType - required - Possible Values: oneWay, roundTrip
-      # @option params cabinClass - required - Possible Values: Economy, Business, First
-      # @option params inboundDate - yyyy-MM-dd (not required for oneWay flights)
-      # @option params outBoundDate - required - yyyy-MM-dd
-      # @option params numAdults - required - 1- 9
-      # @option params numChildren - required - 0- 9
-      # @option params ts_code - optional - always is a7557, for Wego to recognize the traffic is coming from public API. If custom `ts_code` is given, please use the given `ts_code=VALUE`.
-      # @option params monetized_partners - If this field is omitted, all partners results are returned. If true is given, only monetized partners are returned. If false is given, only non monetized partners are returned. Possible values: true, false
+      # @option params :from_Location - required - 3-letter IATA airport code (e.g. SIN)
+      # @option params :to_location - required - 3-letter IATA airport code (e.g. BKK)
+      # @option params :trip_type - required - Possible Values: oneWay, roundTrip
+      # @option params :cabin_class - required - Possible Values: Economy, Business, First
+      # @option params :inbound_date - yyyy-MM-dd (not required for oneWay flights)
+      # @option params :outbound_date - required - yyyy-MM-dd
+      # @option params :num_adults - required - 1- 9
+      # @option params :num_children - required - 0- 9
+      # @option params :ts_code - optional - always is a7557, for Wego to recognize the traffic is coming from public API. If custom `ts_code` is given, please use the given `ts_code=VALUE`.
+      # @option params :monetized_partners - If this field is omitted, all partners results are returned. If true is given, only monetized partners are returned. If false is given, only non monetized partners are returned. Possible values: true, false
       # @return [Search]
       # @see http://www.wego.com/api/flights/docs#api_startSearch
       def search(params)
@@ -70,11 +71,15 @@ module Wego
 
       protected
 
+      # You should not need to call this method directly, #search will
+      # call #pull for you.
+      #
       # @param [Hash] params
       # @option params instanceId - required - Instance Id returned by the startSearch API request.
       # @option params rand - required - a random alpha-numeric value. The rand parameter used is used in conjunction with the instanceId parameter to form a unique key that will keep track of number of results returned to the client for a given session. Important: If you wish to start polling from the very first result then issue a new rand value, otherwise continue using the same rand till you reach the end of result list.
       # @option params monetized_partners - If this field is omitted, all partners results are returned. If true is given, only monetized partners are returned. If false is given, only non monetized partners are returned. Possible values: true, false
       # @see http://www.wego.com/api/flights/docs#api_pull
+      # @private
       def pull(params)
         with_event_machine do
           params = Hashie::Camel.new(params)

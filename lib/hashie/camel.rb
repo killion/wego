@@ -2,7 +2,6 @@ module Hashie
   class Camel < Mash
     # @param [Hash] options
     # @option options :except list of keys to not convert
-    # @option options :upper  list of keys to start with lowercase. keys are lowercase by default
     def initialize(hash, options = {})
       @options = {:except => []}.merge(options)
       @options[:except].map! {|key| key.to_s}

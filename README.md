@@ -54,8 +54,20 @@ search.itineraries.each do |i|
 end
 ```
 
-Wego recommends waiting for at least 10 seconds before trying to pull results.
-This gem will poll for results using a periodic EventMachine timer.
+## Flight Results Fetch Interval
+
+By default, this gem follows Wego's recommended polling interval:
+
+> Wego recommends API consumers to do at least 10 polling with 5 seconds interval.
+
+To change this, configure your own `Wego::Flights::Client`:
+
+```ruby
+client = Wego::Flights::Client.new(:pull_wait => 4.0, :pull_count => 2)
+client.search({...})
+```
+
+This gem polls for results using a periodic EventMachine timer.
 It is Fiber aware and can be used with em-synchrony.
 
 ## Development
