@@ -204,11 +204,10 @@ Wego API Exception
       end
     end
 
-    class Search
-      attr_accessor :itineraries
-
-      def initialize
-        @itineraries = []
+    class Search < Hashie::Rash
+      def initialize(source = {}, default = nil)
+        self[:itineraries] = []
+        super
       end
     end
 
