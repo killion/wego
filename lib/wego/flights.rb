@@ -91,7 +91,11 @@ module Wego
             res = @http.get('/pull.html', params).body.response
 
             # TODO: sometimes result hash is blank
-            search.itineraries += res.itineraries.map {|i| Itinerary.new(i)}
+            search.itineraries += res.itineraries.map do |i|
+              i.instance_id = search.instance_id
+              Itinerary.new(i)
+            end
+
             tries += 1
             if !res.pending_results || tries >= @options[:pull_count]
               poll_timer.cancel
@@ -206,12 +210,16 @@ Wego API Exception
 
     class Search < Hashie::Rash
       def initialize(source = {}, default = nil)
-        self[:itineraries] = []
+        self[:itineraries] ||= []
         super
       end
     end
 
     class Itinerary < Hashie::Rash
+      # TODO: separate out request objects from response objects
+      # Need a DeferredResponse object that holds all the information
+      # needed for executing a request
+
       # @param [Boolean] refresh - do not return cached results
       # @return [Array] inbound Segments
       def inbound_segments(refresh = false)

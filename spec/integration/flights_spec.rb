@@ -33,7 +33,12 @@ describe Wego::Flights do
       search = client.search(params)
       search.instance_id.should_not be_nil
       search.rand.should_not be_nil
+
       search.itineraries.should_not be_empty
+
+      itinerary = search.itineraries.first
+      itinerary.instance_id.should_not be_nil
+
     end
   end
 end
