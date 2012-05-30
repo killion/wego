@@ -82,8 +82,8 @@ module Wego
       # @private
       def pull(params)
         with_event_machine do
+          search = Search.new(params)
           params = Hashie::Camel.new(params)
-          search = Search.new
           tries  = 0
           fiber  = Fiber.current
 

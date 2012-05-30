@@ -30,8 +30,10 @@ describe Wego::Flights do
     end
 
     it 'should work' do
-      s = client.search(params)
-      s.itineraries.should_not be_empty
+      search = client.search(params)
+      search.instance_id.should_not be_nil
+      search.rand.should_not be_nil
+      search.itineraries.should_not be_empty
     end
   end
 end
