@@ -5,7 +5,7 @@ describe Hashie::Camel do
     Hashie::Camel.new({
       :api_key => 'foo',
       :ts_code => 'baz'
-    }, :except => [:ts_code]).to_hash
+    }, nil, :except => [:ts_code]).to_hash
   }
 
   it 'should camelize' do
