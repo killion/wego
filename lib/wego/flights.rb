@@ -209,9 +209,9 @@ Wego API Exception
     end
 
     class Search < Hashie::Rash
-      def initialize(source = {}, default = nil)
-        self[:itineraries] ||= []
+      def initialize(source = nil, default = nil, &blk)
         super
+        self.itineraries ||= []
       end
     end
 
