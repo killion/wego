@@ -149,8 +149,8 @@ module Wego
 
           @app.call(env).on_complete do |env|
             if env[:status].to_s =~ /2\d\d/
-              env[:body] = Hashie::Rash.new(MultiJson.decode(env[:body]), Hashie::Mash.new)
-              if e = env[:body].response.error
+              env[:body] = Hashie::Rash.new(MultiJson.decode(env[:body]))
+              if e = (env[:body].response && env[:body].response.error)
                 Wego.log.error e
               end
             else
