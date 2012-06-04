@@ -70,6 +70,20 @@ client.search({...})
 This gem polls for results using a periodic EventMachine timer.
 It is Fiber aware and can be used with em-synchrony.
 
+## Logging
+
+A ruby [Logger](http://www.ruby-doc.org/stdlib-1.9.3/libdoc/logger/rdoc/Logger.html)
+can be configured to see intermediate steps:
+
+```ruby
+logger = Logger.new(STDOUT)
+logger.level = Logger::DEBUG
+
+Wego.configure do |config|
+  config.logger = logger
+end
+```
+
 ## Development
 
 To run integration tests locally, set WEGO_API environment variable and run:
