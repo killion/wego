@@ -12,6 +12,8 @@ describe Wego::Flights do
   end
 
   context 'search' do
+
+
     let(:client) {
       Wego::Flights::Client.new(:pull_wait => 4.0, :pull_count => 2)
     }
@@ -33,12 +35,20 @@ describe Wego::Flights do
       search = client.search(params)
       search.instance_id.should_not be_nil
       search.rand.should_not be_nil
+      search.unknown_key.should be_nil
 
       search.itineraries.should_not be_empty
+      search.itineraries.map(&:class).uniq.should =~ [Wego::Flights::Itinerary]
 
       itinerary = search.itineraries.first
       itinerary.instance_id.should_not be_nil
+      itinerary.unknown_key.should be_nil
 
+      itinerary.inbound_segments.should_not be_empty
+      itinerary.inbound_segments.map(&:class).uniq.should =~ [Wego::Flights::Itinerary::Segment]
+
+      itinerary.outbound_segments.should_not be_empty
+      itinerary.outbound_segments.map(&:class).uniq.should =~ [Wego::Flights::Itinerary::Segment]
     end
   end
 end

@@ -89,12 +89,32 @@ module Wego
 
           poll_timer = EM.add_periodic_timer(@options[:pull_wait]) do
             res = @http.get('/pull.html', params).body.response
+            itineraries = res.itineraries.map do |rash|
+              i = Itinerary.new(rash)
+              i.instance_id = search.instance_id
+              i.lazy(:segments) do
+                # TODO: /details API requires :outbound_date and
+                # :inbound_date, but does not provide them easily
+                # in the itinerary results from /pull.html
+                segments = details({
+                  :instance_id   => i.instance_id,
+                  :itinerary_id  => i.id,
+                  :outbound_date => Date.parse(i.outbound_info.local_departure_time_str).to_s,
+                  :inbound_date  => Date.parse(i.inbound_info.local_departure_time_str).to_s
+                })
+                # TODO: hashie copies over the class
+                i.cached_segments ||= segments
+                i.cached_segments
+              end
+              i
+            end
 
             # TODO: sometimes result hash is blank
-            search.itineraries += res.itineraries.map do |i|
-              i.instance_id = search.instance_id
-              Itinerary.new(i)
-            end
+            # for some reason, += changes the type to Search,
+            # and loses Itinerary as the type
+            # search.itineraries += itineraries
+            search.itineraries << itineraries
+            search.itineraries.flatten!
 
             tries += 1
             if !res.pending_results || tries >= @options[:pull_count]
@@ -113,8 +133,16 @@ module Wego
       # @option params :outbound_date - required yyyy-MM-dd
       # @option params :inbound_date - yyyy-MM-dd
       def details(params)
-        params = Hashie::Camel.new(params)
-        @http.get('/details.html', params).body.details
+        params   = Hashie::Camel.new(params)
+        segments = @http.get('/details.html', params).body.details
+
+        # set type to Segment
+        [:inbound_segments, :outbound_segments].each do |key|
+          segments[key] = segments[key].list.map {|s|
+            Itinerary::Segment.new(s)
+          }
+        end
+        segments
       end
 
       def with_event_machine(&blk)
@@ -216,18 +244,16 @@ Wego API Exception
     end
 
     class Itinerary < Hashie::Rash
-      # TODO: separate out request objects from response objects
-      # Need a DeferredResponse object that holds all the information
-      # needed for executing a request
+      include Hashie::Lazy
 
-      # @param [Boolean] refresh - do not return cached results
-      # @return [Array] inbound Segments
-      def inbound_segments(refresh = false)
+      def inbound_segments
+        # use [] to read underlying value
+        segments[:inbound_segments]
       end
 
-      # @param [Boolean] refresh - do not return cached results
-      # @return [Array] outbound Segments
-      def outbound_segments(refresh = false)
+      def outbound_segments
+        # use [] to read underlying value
+        segments[:outbound_segments]
       end
 
       def booking_url
