@@ -13,6 +13,8 @@ end
 
 group :development, :test do
   gem 'rspec', '~> 2'
+  gem 'vcr'
+  gem 'webmock'
 end
 
 group :debugger do
