@@ -36,7 +36,7 @@ search = Wego::Flights.search({
   :trip_type     => 'roundTrip',
   :cabin_class   => 'Economy',
   :inbound_date  => '2010-06-26',
-  :outbount_date => '2010-06-23',
+  :outbound_date => '2010-06-23',
   :num_adults    => 1,
   :ts_code       => 'a7557'
 })
