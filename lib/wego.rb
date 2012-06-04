@@ -19,15 +19,16 @@ require 'wego/flights'
 module Wego
   # @see Wego::Configuration
   def configure(options = {})
+    options = Hashie::Mash.new(options)
+
     unless options[:logger]
       logger = Logger.new(STDERR)
       logger.level = Logger::WARN
       options[:logger] = logger
     end
 
+    yield options if block_given?
     config(options)
-    yield config if block_given?
-    config
   end
 
   def config(options = {})
