@@ -23,13 +23,13 @@ module Wego
       attr_reader :options
 
       # @param [Hash] options
-      # @option options [Float]   :pull_wait time in seconds to wait for polling results. default 5.0
-      # @option options [Integer] :pull_count number of times to pull. default 10
+      # @option options [Float]   :pull_wait time in seconds to wait for polling results. default 4.0
+      # @option options [Integer] :pull_count number of times to pull. default 2
       # @option options [String]  :api_key. default Wego.config.api_key
       def initialize(options = {})
         @options = {
-          :pull_wait  => 5.0,
-          :pull_count => 10,
+          :pull_wait  => 4.0,
+          :pull_count => 2,
           :api_key    => Wego.config.api_key
         }.merge(options)
         @http = Faraday.new(BASE_URL) do |f|
