@@ -62,8 +62,10 @@ module Wego
         res    = @http.get '/startSearch.html', params
 
         pull_params = {
-          :instance_id => res.body.request.instance_id,
-          :rand        => UUID.generate(:compact)
+          :instance_id   => res.body.request.instance_id,
+          :rand          => UUID.generate(:compact),
+          :inbound_date  => params.inbound_date,
+          :outbound_date => params.outbound_date
         }
         pull_params[:monetized_partners] = params[:monetized_partners] if params[:monetized_partners]
         pull(pull_params)
@@ -99,10 +101,9 @@ module Wego
                 segments = details({
                   :instance_id   => i.instance_id,
                   :itinerary_id  => i.id,
-                  :outbound_date => Date.parse(i.outbound_info.local_departure_time_str).to_s,
-                  :inbound_date  => Date.parse(i.inbound_info.local_departure_time_str).to_s
+                  :outbound_date => search.outbound_date,
+                  :inbound_date  => search.inbound_date
                 })
-                # TODO: hashie copies over the class
                 i.cached_segments ||= segments
                 i.cached_segments
               end
@@ -178,8 +179,8 @@ module Wego
           @app.call(env).on_complete do |env|
             if env[:status].to_s =~ /2\d\d/
               env[:body] = Hashie::Rash.new(MultiJson.decode(env[:body]))
-              if e = (env[:body].response && env[:body].response.error)
-                Wego.log.error e
+              if e = env[:body].error
+                raise Wego::Error.new "#{e} - #{env[:body].details}"
               end
             else
               raise Wego::Error.new <<-FATAL
