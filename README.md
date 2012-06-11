@@ -86,7 +86,7 @@ end
 
 ## Development
 
-To run integration tests locally, set WEGO_API environment variable and run:
+To run integration tests locally, set `WEGO_API` environment variable and run:
 
 ```sh
 WEGO_API=yourapikey rspec spec/integration
