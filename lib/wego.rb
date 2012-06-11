@@ -3,6 +3,7 @@ require "wego/version"
 require "fiber"
 require "eventmachine"
 
+require "forwardable"
 require "uri"
 require "logger"
 require "hashie"

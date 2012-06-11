@@ -25,14 +25,17 @@ module Wego
       # @param [Hash] options
       # @option options [Float]   :pull_wait time in seconds to wait for polling results. default 4.0
       # @option options [Integer] :pull_count number of times to pull. default 2
-      # @option options [String]  :api_key. default Wego.config.api_key
+      # @option options [String]  :api_key default Wego.config.api_key
+      # @option options [Hash]    :cache options for caching. [Wego::Flights::CacheMiddleware#initialize](Client/CacheMiddleware.html#initialize-instance_method)
       def initialize(options = {})
         @options = {
           :pull_wait  => 4.0,
           :pull_count => 2,
           :api_key    => Wego.config.api_key
         }.merge(options)
+
         @http = Faraday.new(BASE_URL) do |f|
+          f.use CacheMiddleware, options[:cache] if options[:cache]
           f.use HttpMiddleware, :api_key => @options[:api_key]
           f.use Logger, :logger => Wego.log
           f.adapter :net_http # TODO: em_http here
@@ -45,7 +48,7 @@ module Wego
       end
 
       # @param [Hash] params - can be camelCase or under_score
-      # @option params :from_Location - required - 3-letter IATA airport code (e.g. SIN)
+      # @option params :from_location - required - 3-letter IATA airport code (e.g. SIN)
       # @option params :to_location - required - 3-letter IATA airport code (e.g. BKK)
       # @option params :trip_type - required - Possible Values: oneWay, roundTrip
       # @option params :cabin_class - required - Possible Values: Economy, Business, First
@@ -163,6 +166,32 @@ module Wego
           }.resume
         end
         result
+      end
+
+      # Caches API results by url
+      class CacheMiddleware < Faraday::Middleware
+        extend Forwardable
+
+        def_delegators :"@options[:store]", :read, :write
+
+        # @param [Hash] options
+        # @option options [Integer] :ttl time to live in seconds
+        # @option options [ActiveSupport::Cache::Store] :store activesupport compatible cache store
+        def initialize(app, options = {})
+          super(app)
+          @options = options
+        end
+
+        def call(env)
+          response = read(env[:url])
+          unless response
+            response = @app.call(env)
+            response.on_complete do |env|
+              write(env[:url], response)
+            end
+          end
+          response
+        end
       end
 
       class HttpMiddleware < Faraday::Middleware
