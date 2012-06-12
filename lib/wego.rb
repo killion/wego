@@ -3,6 +3,7 @@ require "wego/version"
 require "fiber"
 require "eventmachine"
 
+require "forwardable"
 require "uri"
 require "logger"
 require "hashie"
@@ -14,6 +15,7 @@ require "multi_json"
 require "active_support/core_ext/object/to_query"
 require "uuid"
 
+require 'wego/middleware'
 require 'wego/flights'
 
 module Wego
