@@ -19,6 +19,8 @@ group :development, :test do
   gem 'rspec', '~> 2'
   gem 'vcr'
   gem 'webmock'
+  gem 'rack-test'
+  gem 'activesupport'  # testing caching
 end
 
 group :debugger do
