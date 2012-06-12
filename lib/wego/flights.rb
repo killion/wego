@@ -35,7 +35,7 @@ module Wego
         }.merge(options)
 
         @http = Faraday.new(BASE_URL) do |f|
-          f.use CacheMiddleware, options[:cache] if options[:cache]
+          f.use Wego::Middleware::Caching, options[:cache] if options[:cache]
           f.use HttpMiddleware, :api_key => @options[:api_key]
           f.use Logger, :logger => Wego.log
           f.adapter :net_http # TODO: em_http here
@@ -166,32 +166,6 @@ module Wego
           }.resume
         end
         result
-      end
-
-      # Caches API results by url
-      class CacheMiddleware < Faraday::Middleware
-        extend Forwardable
-
-        def_delegators :"@options[:store]", :read, :write
-
-        # @param [Hash] options
-        # @option options [Integer] :ttl time to live in seconds
-        # @option options [ActiveSupport::Cache::Store] :store activesupport compatible cache store
-        def initialize(app, options = {})
-          super(app)
-          @options = options
-        end
-
-        def call(env)
-          response = read(env[:url])
-          unless response
-            response = @app.call(env)
-            response.on_complete do |env|
-              write(env[:url], response)
-            end
-          end
-          response
-        end
       end
 
       class HttpMiddleware < Faraday::Middleware

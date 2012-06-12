@@ -15,6 +15,7 @@ require "multi_json"
 require "active_support/core_ext/object/to_query"
 require "uuid"
 
+require 'wego/middleware'
 require 'wego/flights'
 
 module Wego
