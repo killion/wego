@@ -84,6 +84,20 @@ Wego.configure do |config|
 end
 ```
 
+## Caching
+
+An ActiveSupport compatible cache store can be used to cache results.
+See [this blog post](http://intridea.com/posts/writing-a-custom-rails-cache-store)
+for an introduction to cache stores.
+
+```ruby
+# share same cache as Rails
+Wego::Flights::Client.new(:cache => Rails.cache)
+
+# generic usage
+Wego::Flights::Client.new(:cache => ActiveSupport::Cache.lookup_store(:memory_store))
+```
+
 ## Development
 
 To run integration tests locally, set `WEGO_API` environment variable and run:
