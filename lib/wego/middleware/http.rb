@@ -21,10 +21,20 @@ module Wego
               raise Wego::Error.new "#{e} - #{env[:body].details}"
             end
           else
-            raise Wego::Error.new <<-FATAL
+            error!(env)
+          end
+        end
+      rescue Faraday::Error::TimeoutError
+        raise Wego::Error::Timeout
+      rescue MultiJson::DecodeError
+        raise Wego::Error.new error!(env, "Invalid JSON response")
+      end
 
-Wego API Exception
-==================
+      def error!(env, message="Wego API Exception")
+        raise Wego::Error.new <<-FATAL
+
+#{message}
+#{"=" * message.size}
 URL:
 #{env[:url]}
 
@@ -34,11 +44,7 @@ Status:
 Body:
 #{env[:body]}
 
-            FATAL
-          end
-        end
-      rescue Faraday::Error::TimeoutError
-        raise Wego::Error::Timeout
+FATAL
       end
     end
   end
