@@ -94,6 +94,16 @@ module Wego
                 i.cached_segments ||= segments
                 i.cached_segments
               end
+
+              i.lazy(:booking_url) do
+                redirect({
+                  :instance_id  => i.instance_id,
+                  :booking_code => i.booking_code,
+                  :provider_id  => i.provider_id,
+                  :dl_from      => i.outbound_info.airports.first,  # gross
+                  :dl_to        => i.outbound_info.airports.last # gross
+                })
+              end
               i
             end
 
@@ -131,6 +141,30 @@ module Wego
           }
         end
         segments
+      end
+
+      # @param [Hash] params
+      # @option params :instance_id - required - Instance Id returned by the startSearch API request.
+      # @option params :booking_code - required - obtained via /pull method from an Itinerary Object
+      # @option params :dl_from - required - Departure Airport IATA code
+      # @option params :dl_to - required - Destination Airport IATA code
+      # @option params :provider_id - required - Provider Id obtained from an Itinerary Object
+      # @option params :ts_code - required - always is a7557, for Wego to recognize the traffic is coming from public API. If custom ts_code is given, please use the given ts_code=VALUE .
+      # @return [String] booking url
+      def redirect(params)
+        params = Hashie::Camel.new(params)
+        params[:ts_code] ||= 'a7557'
+
+        begin
+          res = @http.get('/redirect.html', params).body
+          booking_url = res.user_specific_params.booking_url
+        rescue Wego::Error => e
+          if e.message =~ /Invalid JSON response/
+            # TODO: sometimes wego returns no booking url?
+          end
+          booking_url = ""
+        end
+        booking_url
       end
 
       def with_event_machine(&blk)
