@@ -41,7 +41,7 @@ module Wego
       def initialize(options = {})
         @options = {
           :pull_wait  => 5.0,
-          :pull_count => 10,
+          :pull_count => 5,
           :api_key    => Wego.config.api_key
         }.merge(options)
 
