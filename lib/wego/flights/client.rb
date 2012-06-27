@@ -8,29 +8,35 @@ module Wego
       CACHE_EXPIRES_IN ||= 60.minutes.freeze
       CACHED_METHODS ||= [:search, :details, :redirect].freeze
 
-      #setup caching. so calling Client.search will call try to get the cache for all the params, and fallback to Client.search!
-#      CACHED_METHODS.each do |method_name|
-#        #TODO check if block is passed in
-#        define_method do |method_name|
-#          inner_method_name = method_name.to_s + "!"
-#
-#          if @cache_store
-#            params = args.first
-#            cache_key = CACHE_PREFIX + Digest::MD5.hexdigest(Marshal.dump(params.sort))
-#              #sort actually turns it into a [key, value] array
-#
-#            res = @cache_store.read(cache_key)
-#            unless res
-#              res = self.send(inner_method_name, args)
-#              @cache_store.write(cache_key, res, :expires_in => CACHE_EXPIRES_IN)
-#            end
-#            res
-#          else
-#            self.send(inner_method_name, args)
-#          end
-#        end
-#      end
-#
+      #setup caching
+      CACHED_METHODS.each do |method_name|
+        define_method(method_name) do |query_params, &blk|
+          inner_method_name = method_name.to_s + "!"
+
+          if @cache_store
+            cache_key = Client.gen_cache_key query_params
+
+            res = @cache_store.read(cache_key)
+            unless res
+              Wego.log.debug "#{method_name}, params #{query_params} - cache miss, so querying wego"
+
+              if blk
+                res = self.send(inner_method_name, query_params, &blk)
+              else
+                res = self.send(inner_method_name, query_params)
+              end
+
+              @cache_store.write(cache_key, res, :expires_in => CACHE_EXPIRES_IN)
+            else
+              Wego.log.debug "#{method_name}, params #{query_params} - cache hit, using cached value"
+            end
+            res
+          else
+            self.send(inner_method_name, query_params, &blk)
+          end
+        end
+      end
+
       attr_reader :options
 
       # @param [Hash] options
@@ -41,14 +47,13 @@ module Wego
       def initialize(options = {})
         @options = {
           :pull_wait  => 5.0,
-          :pull_count => 10,
+          :pull_count => 5,
           :api_key    => Wego.config.api_key
         }.merge(options)
 
         @cache_store = options[:cache]
 
         @http = Faraday.new(BASE_URL) do |f|
-          #f.use Wego::Middleware::Caching, :store => options[:cache] if options[:cache]
           f.use Wego::Middleware::Http, :api_key => @options[:api_key], :prefix => PREFIX
           f.use Wego::Middleware::Logging, :logger => Wego.log
           f.adapter :net_http # TODO: em_http here
@@ -75,8 +80,7 @@ module Wego
       # @param [blk] update_count_block - optional - call this block with the total number of results, as they're being loaded
       # @return [Search]
       # @see http://www.wego.com/api/flights/docs#api_startSearch
-      #def search!(params, &update_count_blk)
-      def search(params, &update_count_blk)
+      def search!(params, &update_count_blk)
         params = Hashie::Camel.new(params)
 
         res    = @http.get '/startSearch.html', params
@@ -97,8 +101,7 @@ module Wego
       # @option params :outbound_date - required yyyy-MM-dd
       # @option params :inbound_date - yyyy-MM-dd
       # @return an Itinerary::Segment object (a Hashie::Rash) with keys outboundSegments and inboundSegments, values array of segment hashes as described in http://www.wego.com/api/flights/docs#api_details
-      #def details!(params)
-      def details(params)
+      def details!(params)
         params   = Hashie::Camel.new(params)
         segments = @http.get('/details.html', params).body.details
 
@@ -119,8 +122,7 @@ module Wego
       # @option params :provider_id - required - Provider Id obtained from an Itinerary Object
       # @option params :ts_code - required - always is a7557, for Wego to recognize the traffic is coming from public API. If custom ts_code is given, please use the given ts_code=VALUE .
       # @return [String] booking url
-      #def redirect!(params)
-      def redirect(params)
+      def redirect!(params)
         params = Hashie::Camel.new(params)
         params[:ts_code] ||= 'a7557'
 
@@ -161,38 +163,13 @@ module Wego
             res = @http.get('/pull.html', params).body.response
             itineraries = res.itineraries.map do |rash|
               i = Itinerary.new(rash)
-
               i.instance_id = search.instance_id
-              i.lazy(:segments) do
-                # TODO: /details API requires :outbound_date and
-                # :inbound_date, but does not provide them easily
-                # in the itinerary results from /pull.html
-                segments = details({
-                  :instance_id   => i.instance_id,
-                  :itinerary_id  => i.id,
-                  :outbound_date => search.outbound_date,
-                  :inbound_date  => search.inbound_date
-                })
-                i.cached_segments ||= segments
-                i.cached_segments
-              end
-
-              i.lazy(:booking_url) do
-                redirect({
-                  :instance_id  => i.instance_id,
-                  :booking_code => i.booking_code,
-                  :provider_id  => i.provider_id,
-                  :dl_from      => i.outbound_info.airports.first,  # gross
-                  :dl_to        => i.outbound_info.airports.last # gross
-                })
-              end
               i
             end
 
             itineraries.reject! {|i| i.id.nil? }
-              #sometimes wego returns empty itineraries - (only?) when pending_results is false
+              #sometimes wego returns empty itineraries
 
-            # TODO: sometimes result hash is blank
             # for some reason, += changes the type to Search,
             # and loses Itinerary as the type
             # search.itineraries += itineraries
@@ -229,6 +206,10 @@ module Wego
           }.resume
         end
         result
+      end
+
+      def self.gen_cache_key query_params
+         CACHE_PREFIX + Digest::MD5.hexdigest(Marshal.dump(query_params.sort))
       end
     end
   end
