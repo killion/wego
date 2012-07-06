@@ -56,7 +56,7 @@ module Wego
         @http = Faraday.new(BASE_URL) do |f|
           f.use Wego::Middleware::Http, :api_key => @options[:api_key], :prefix => PREFIX
           f.use Wego::Middleware::Logging, :logger => Wego.log
-          f.adapter :net_http # TODO: em_http here
+          f.adapter :net_http 
         end
       end
 
@@ -92,6 +92,7 @@ module Wego
           :outbound_date => params.outbound_date
         }
         pull_params[:monetized_partners] = params[:monetized_partners] if params[:monetized_partners]
+
         pull(pull_params, update_count_blk)
       end
 
@@ -151,61 +152,38 @@ module Wego
       # @param [Blk] update_count_blk - optional - call this block with the total number of results, as they're being loaded
       # @private
       def pull(params, update_count_blk=nil)
+        search = Search.new(params)
+        params = Hashie::Camel.new(params)
+        tries  = 0
+
         update_count_blk.call(0) unless update_count_blk.nil?
 
-        with_event_machine do
-          search = Search.new(params)
-          params = Hashie::Camel.new(params)
-          tries  = 0
-          fiber  = Fiber.current
+        (1..@options[:pull_count]).each do |try|
+          res = @http.get('/pull.html', params).body.response
 
-          poll_timer = EM.add_periodic_timer(@options[:pull_wait]) do
-            res = @http.get('/pull.html', params).body.response
-            itineraries = res.itineraries.map do |rash|
-              i = Itinerary.new(rash)
-              i.instance_id = search.instance_id
-              i
-            end
-
-            itineraries.reject! {|i| i.id.nil? }
-              #sometimes wego returns empty itineraries
-
-            # for some reason, += changes the type to Search,
-            # and loses Itinerary as the type
-            # search.itineraries += itineraries
-            search.itineraries << itineraries
-            search.itineraries.flatten!
-
-            update_count_blk.call(search.itineraries.count) unless update_count_blk.nil?
-
-            tries += 1
-            if !res.pending_results || tries >= @options[:pull_count]
-              poll_timer.cancel
-              fiber.resume search
-            end
+          itineraries = res.itineraries.map do |rash|
+            i = Itinerary.new(rash)
+            i.instance_id = search.instance_id
+            i
           end
 
-          Fiber.yield  # populated Search object
-        end
-      end
+          itineraries.reject! {|i| i.id.nil? }
+            #sometimes wego returns empty itineraries
 
-      def with_event_machine(&blk)
-        # Note: avoid synchronous logging or other synchronous actions
-        # in the following block
-        result = nil
-        if !EM.reactor_running?
-          EM.run do
-            Fiber.new {
-              result = blk.call
-              EM.stop
-            }.resume
-          end
-        else
-          Fiber.new {
-            result = blk.call
-          }.resume
+          # for some reason, += changes the type to Search,
+          # and loses Itinerary as the type
+          # search.itineraries += itineraries
+          search.itineraries << itineraries
+          search.itineraries.flatten!
+
+          update_count_blk.call(search.itineraries.count) unless update_count_blk.nil?
+
+          break if !res.pending_results
+
+          sleep @options[:pull_wait] if try < @options[:pull_count]
         end
-        result
+
+        search
       end
 
       def self.gen_cache_key query_params

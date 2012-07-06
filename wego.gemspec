@@ -20,6 +20,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency "faraday"
   gem.add_dependency "multi_json"
   gem.add_dependency "activesupport"
-  gem.add_dependency "eventmachine"
   gem.add_dependency "uuid"
+  gem.add_dependency "eventmachine"
+  gem.add_dependency "em-http-request"
 end
