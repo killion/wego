@@ -8,15 +8,21 @@ module Wego
       CACHE_EXPIRES_IN ||= 60.minutes.freeze
       CACHED_METHODS ||= [:search, :details, :redirect].freeze
 
+      USAGE_CACHE_KEY ||= "Wego_Client_Latest_Usage"
+      USAGE_CACHE_EXPIRES_IN ||= 60.minutes.freeze
+
       #setup caching
       CACHED_METHODS.each do |method_name|
         define_method(method_name) do |query_params, &blk|
           inner_method_name = method_name.to_s + "!"
 
-          if @cache_store
+          unless @cache_store
+            self.send(inner_method_name, query_params, &blk)
+          else
             cache_key = Client.gen_cache_key query_params
 
             res = @cache_store.read(cache_key)
+
             unless res
               Wego.log.debug "#{method_name}, params #{query_params} - cache miss, so querying wego"
 
@@ -26,13 +32,16 @@ module Wego
                 res = self.send(inner_method_name, query_params)
               end
 
-              @cache_store.write(cache_key, res, :expires_in => CACHE_EXPIRES_IN)
+              if method_name.to_s == "search" && res.try(:usage_exceeded)
+                #if wego usage exceeded, only write to cache for the length of time it will be exceeded for
+                @cache_store.write(cache_key, res, :expires_in => res.usage_available_in)
+              else
+                @cache_store.write(cache_key, res, :expires_in => CACHE_EXPIRES_IN)
+              end
             else
               Wego.log.debug "#{method_name}, params #{query_params} - cache hit, using cached value"
             end
             res
-          else
-            self.send(inner_method_name, query_params, &blk)
           end
         end
       end
@@ -62,8 +71,23 @@ module Wego
 
       def usage
         res = @http.get '/usage.html'
-          #TODO call usage
-        res.body && Usage.new(res.body)
+        res.body && Usage.new_from_api(res.body)
+      end
+
+      def update_usage
+        @cache_store.write(USAGE_CACHE_KEY, usage, :expires_in => USAGE_CACHE_EXPIRES_IN) if @cache_store
+      end
+
+      def last_usage
+        @cache_store.read(USAGE_CACHE_KEY) if @cache_store
+      end
+
+      # a Search object we return to communicates usage is exceeded
+      def usage_exceeded_search
+        search = Search.new
+        search.usage_exceeded = true
+        search.usage_available_in = last_usage.end_time_bucket - Time.now   #we expect last_usage to be in the cache
+        search
       end
 
       # @param [Hash] params - can be camelCase or under_score
@@ -83,7 +107,11 @@ module Wego
       def search!(params, &update_count_blk)
         params = Hashie::Camel.new(params)
 
+        return usage_exceeded_search if last_usage.try(:usage_exceeded)
+
         res    = @http.get '/startSearch.html', params
+
+        return usage_exceeded_search if last_usage && (res.body.request.usage.to_i + @options[:pull_count] > last_usage.max_count)
 
         pull_params = {
           :instance_id   => res.body.request.instance_id,
