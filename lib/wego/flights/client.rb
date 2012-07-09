@@ -49,14 +49,16 @@ module Wego
       attr_reader :options
 
       # @param [Hash] options
-      # @option options [Float]   :pull_wait time in seconds to wait for polling results. default 4.0
-      # @option options [Integer] :pull_count maximum number of times to pull while wego's still returning results. default 10
+      # @option options [Float]   :pull_wait time in seconds to wait for polling results. default 5.0
+      # @option options [Integer] :pull_count maximum number of times to pull while wego's still returning results. default 5
+      # @option options [Integer] :pull_stop_no_new stop pulling after this number of times of no new results (this number of consecutive pulls that give no new results)
       # @option options [String]  :api_key default Wego.config.api_key
       # @option options [Hash]    :cache options for caching. [Wego::Flights::CacheMiddleware#initialize](Client/CacheMiddleware.html#initialize-instance_method)
       def initialize(options = {})
         @options = {
           :pull_wait  => 5.0,
           :pull_count => 5,
+          :pull_stop_no_new => 3,
           :api_key    => Wego.config.api_key
         }.merge(options)
 
@@ -186,6 +188,9 @@ module Wego
 
         update_count_blk.call(0) unless update_count_blk.nil?
 
+        pull_stop_no_new_count = 1    # counter for @options[:pull_stop_no_new]. it's a counter of how many duplicates there are (duplicate number of num_itins)
+        num_itins_last_time = 0
+
         (1..@options[:pull_count]).each do |try|
           res = @http.get('/pull.html', params).body.response
 
@@ -204,11 +209,24 @@ module Wego
           search.itineraries << itineraries
           search.itineraries.flatten!
 
-          update_count_blk.call(search.itineraries.count) unless update_count_blk.nil?
+          num_itins = search.itineraries.count
 
-          break if !res.pending_results
+          update_count_blk.call(num_itins) unless update_count_blk.nil?
 
-          sleep @options[:pull_wait] if try < @options[:pull_count]
+          if num_itins_last_time == num_itins
+            pull_stop_no_new_count += 1 
+          else
+            pull_stop_no_new_count = 1
+          end
+
+          break if pull_stop_no_new_count == @options[:pull_stop_no_new] || !res.pending_results
+
+          num_itins_last_time = num_itins
+
+          if try < @options[:pull_count]
+            #don't sleep the last time
+            sleep @options[:pull_wait]
+          end
         end
 
         search
