@@ -10,7 +10,12 @@ module Wego
       end
 
       def call(env)
-        query = {:format => 'json', :apiKey => @options[:api_key]}.to_query
+        query = {:apiKey => @options[:api_key]}.to_query
+
+        unless env[:url].path =~ /redirect.html/i
+          query[:format] = 'json'
+        end
+
         env[:url].query = env[:url].query ? "#{env[:url].query}&#{query}" : query
         env[:url].path  = @options[:prefix] + env[:url].path
 
