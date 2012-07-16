@@ -156,17 +156,9 @@ module Wego
       def redirect!(params)
         params = Hashie::Camel.new(params)
         params[:ts_code] ||= 'a7557'
+        params[:apiKey] ||= @options[:api_key]
 
-        begin
-          res = @http.get('/redirect.html', params).body
-          booking_url = res.user_specific_params.booking_url
-        rescue Wego::Error => e
-          if e.message =~ /Invalid JSON response/
-            # TODO: sometimes wego returns no booking url?
-          end
-          booking_url = ""
-        end
-        booking_url
+        "#{BASE_URL}#{PREFIX}/redirect.html?#{params.to_query}"
       end
 
       protected
