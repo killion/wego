@@ -16,7 +16,7 @@ module Hashie
 
     def camelize(key)
       if key =~ /_([a-z])/
-        key.gsub(/_([a-z])/, $1.to_s.upcase)
+        key.gsub(/_([a-z])/){|b| b[1..1].upcase}
       else
         key
       end
