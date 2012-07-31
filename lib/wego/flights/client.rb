@@ -156,6 +156,8 @@ module Wego
       # @option params :dl_to - required - Destination Airport IATA code
       # @option params :provider_id - required - Provider Id obtained from an Itinerary Object
       # @option params :ts_code - required - always is a7557, for Wego to recognize the traffic is coming from public API. If custom ts_code is given, please use the given ts_code=VALUE .
+      # @option params :language - optional - pass in the language preferred. If supported by the provider, users will be redirected to the site with the said lang.
+      # @option params :country_site_code - optional - pass in the country site preferred. If supported by the provider, users will be redirected to the provider's corresponding country site.
       # @return [String] booking url
       def redirect!(params)
         params = Hashie::Camel.new(params)
