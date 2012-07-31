@@ -102,6 +102,8 @@ module Wego
       # @option params :num_adults - required - 1- 9
       # @option params :num_children - required - 0- 9
       # @option params :ts_code - optional - always is a7557, for Wego to recognize the traffic is coming from public API. If custom `ts_code` is given, please use the given `ts_code=VALUE`.
+      # @option params :language - optional - pass in the language preferred. If supported by the provider, users will be redirected to the site with the said lang.
+      # @option params :country_site_code - optional - pass in the country site preferred. If supported by the provider, users will be redirected to the provider's corresponding country site.
       # @option params :monetized_partners - If this field is omitted, all partners results are returned. If true is given, only monetized partners are returned. If false is given, only non monetized partners are returned. Possible values: true, false
       # @param [blk] update_count_block - optional - call this block with the total number of results, as they're being loaded
       # @return [Search]
@@ -121,6 +123,8 @@ module Wego
           :inbound_date  => params.inbound_date,
           :outbound_date => params.outbound_date
         }
+        pull_params[:language] = params[:language] if params[:language]
+        pull_params[:country_site_code] = params[:country_site_code] if params[:country_site_code]
         pull_params[:monetized_partners] = params[:monetized_partners] if params[:monetized_partners]
 
         pull(pull_params, update_count_blk)
