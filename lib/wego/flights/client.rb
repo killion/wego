@@ -5,7 +5,7 @@ module Wego
       PREFIX   ||= "/api/flights".freeze
 
       CACHE_PREFIX ||= "Wego_Flights_Client_".freeze
-      CACHE_EXPIRES_IN ||= 60.minutes.freeze
+      CACHE_EXPIRES_IN ||= 30.minutes.freeze
       CACHED_METHODS ||= [:search, :details, :redirect].freeze
 
       USAGE_CACHE_KEY ||= "Wego_Client_Latest_Usage"
