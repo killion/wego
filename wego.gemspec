@@ -2,8 +2,8 @@
 require File.expand_path('../lib/wego/version', __FILE__)
 
 Gem::Specification.new do |gem|
-  gem.authors       = ["Jerry Cheung"]
-  gem.email         = ["jch@whatcodecraves.com"]
+  gem.authors       = ["Flights With Friends, Inc."]
+  gem.email         = ["info@flightswithfriends.com"]
   gem.description   = %q{ruby client to Wego API}
   gem.summary       = %q{ruby client to Wego API}
   gem.homepage      = "https://github.com/jch/wego"
