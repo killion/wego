@@ -32,9 +32,16 @@ module Wego
                 res = self.send(inner_method_name, query_params)
               end
 
-              if method_name.to_s == "search" && res.try(:usage_exceeded)
-                #if wego usage exceeded, only write to cache for the length of time it will be exceeded for
-                @cache_store.write(cache_key, res, :expires_in => res.usage_available_in)
+              if method_name.to_s == "search"
+                if res.try(:usage_exceeded)
+                  #if wego usage exceeded, only write to cache for the length of time it will be exceeded for
+                  @cache_store.write(cache_key, res, :expires_in => res.usage_available_in)
+                elsif res.itineraries.empty? or res.itineraries.first.empty?
+                  # do not cache empty results
+                  Wego.log.debug "#{method_name}, params #{query_params} - no itineraries, so not caching anything"
+                else
+                  @cache_store.write(cache_key, res, :expires_in => CACHE_EXPIRES_IN)
+                end
               else
                 @cache_store.write(cache_key, res, :expires_in => CACHE_EXPIRES_IN)
               end
