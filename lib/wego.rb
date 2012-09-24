@@ -10,6 +10,8 @@ require "hashie/camel"
 require "faraday"
 require "multi_json"
 require "active_support/core_ext/object/to_query"
+require 'active_support/time_with_zone'
+require "active_support/core_ext/numeric/time"
 require "uuid"
 
 require 'wego/middleware'

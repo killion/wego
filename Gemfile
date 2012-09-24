@@ -20,7 +20,6 @@ group :development, :test do
   gem 'vcr'
   gem 'webmock'
   gem 'rack-test'
-  gem 'activesupport'  # testing caching
 end
 
 group :debugger do
