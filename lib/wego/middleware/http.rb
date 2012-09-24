@@ -19,7 +19,7 @@ module Wego
           if env[:status].to_s =~ /2\d\d/
             env[:body] = Hashie::Rash.new(MultiJson.decode(env[:body]))
             if e = env[:body].error
-              raise Wego::Error.new "#{e} - #{env[:body].details}"
+              error!(env, "#{e} - #{env[:body].details}")
             end
           else
             error!(env)
