@@ -64,7 +64,7 @@ module Wego
       def initialize(options = {})
         @options = {
           :pull_wait  => 5.0,
-          :pull_count => 5,
+          :pull_count => 10,
           :pull_stop_no_new => 3,
           :api_key    => Wego.config.api_key
         }.merge(options)
@@ -133,6 +133,9 @@ module Wego
         pull_params[:language] = params[:language] if params[:language]
         pull_params[:country_site_code] = params[:country_site_code] if params[:country_site_code]
         pull_params[:monetized_partners] = params[:monetized_partners] if params[:monetized_partners]
+
+        # Adding a 10 second wait before the first pull as recommended by Wego
+        sleep 10.0
 
         pull(pull_params, update_count_blk)
       end
