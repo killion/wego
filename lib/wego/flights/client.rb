@@ -112,10 +112,10 @@ module Wego
       # @option params :language - optional - pass in the language preferred. If supported by the provider, users will be redirected to the site with the said lang.
       # @option params :country_site_code - optional - pass in the country site preferred. If supported by the provider, users will be redirected to the provider's corresponding country site.
       # @option params :monetized_partners - If this field is omitted, all partners results are returned. If true is given, only monetized partners are returned. If false is given, only non monetized partners are returned. Possible values: true, false
-      # @param [blk] update_count_block - optional - call this block with the total number of results, as they're being loaded
+      # @param [blk] update_block - optional - call this block with the search results as they're being loaded
       # @return [Search]
       # @see http://www.wego.com/api/flights/docs#api_startSearch
-      def search!(params, &update_count_blk)
+      def search!(params, &update_block)
         params = Hashie::Camel.new(params)
 
         return usage_exceeded_search if last_usage.try(:usage_exceeded)
@@ -137,7 +137,7 @@ module Wego
         # Adding a 10 second wait before the first pull as recommended by Wego
         sleep 10.0
 
-        pull(pull_params, update_count_blk)
+        pull(pull_params, update_block)
       end
 
       # @param [Hash] params
@@ -187,14 +187,12 @@ module Wego
       # @option params rand - required - a random alpha-numeric value. The rand parameter used is used in conjunction with the instanceId parameter to form a unique key that will keep track of number of results returned to the client for a given session. Important: If you wish to start polling from the very first result then issue a new rand value, otherwise continue using the same rand till you reach the end of result list.
       # @option params monetized_partners - If this field is omitted, all partners results are returned. If true is given, only monetized partners are returned. If false is given, only non monetized partners are returned. Possible values: true, false
       # @see http://www.wego.com/api/flights/docs#api_pull
-      # @param [Blk] update_count_blk - optional - call this block with the total number of results, as they're being loaded
+      # @param [Blk] update_block - optional - call this block with the search results as they're being loaded
       # @private
-      def pull(params, update_count_blk=nil)
+      def pull(params, update_block=nil)
         search = Search.new(params)
         params = Hashie::Camel.new(params)
         tries  = 0
-
-        update_count_blk.call(0) unless update_count_blk.nil?
 
         pull_stop_no_new_count = 1    # counter for @options[:pull_stop_no_new]. it's a counter of how many duplicates there are (duplicate number of num_itins)
         num_itins_last_time = 0
@@ -216,11 +214,12 @@ module Wego
           # search.itineraries += itineraries
           search.itineraries << itineraries
           search.itineraries.flatten!
-
+          current_pull = Search.new(params)
+          current_pull.itineraries << itineraries
+          current_pull.itineraries.flatten!
+          update_block.call(current_pull) unless update_block.nil? or current_pull.itineraries.empty?
+          
           num_itins = search.itineraries.count
-
-          update_count_blk.call(num_itins) unless update_count_blk.nil?
-
           if num_itins_last_time == num_itins
             pull_stop_no_new_count += 1 
           else
