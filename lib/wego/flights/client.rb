@@ -63,8 +63,8 @@ module Wego
       # @option options [Hash]    :cache options for caching. [Wego::Flights::CacheMiddleware#initialize](Client/CacheMiddleware.html#initialize-instance_method)
       def initialize(options = {})
         @options = {
-          :pull_wait  => 5.0,
-          :pull_count => 6,
+          :pull_wait  => 10.0,
+          :pull_count => 2,
           :pull_stop_no_new => 3,
           :api_key    => Wego.config.api_key
         }.merge(options)
