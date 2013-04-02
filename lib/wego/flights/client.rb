@@ -116,7 +116,7 @@ module Wego
       # @return [Search]
       # @see http://www.wego.com/api/flights/docs#api_startSearch
       def search!(params, &update_count_blk)
-        params = Hashie::Camel.new(params)
+        params = Hashie::Camel.new(params, nil, :except => [:ts_code])
 
         return usage_exceeded_search if last_usage.try(:usage_exceeded)
 
@@ -170,7 +170,7 @@ module Wego
       # @option params :country_site_code - optional - pass in the country site preferred. If supported by the provider, users will be redirected to the provider's corresponding country site.
       # @return [String] booking url
       def redirect!(params)
-        params = Hashie::Camel.new(params)
+        params = Hashie::Camel.new(params, nil, :except => [:ts_code])
         params[:ts_code] ||= 'a7557'
         params[:apiKey] ||= @options[:api_key]
 
