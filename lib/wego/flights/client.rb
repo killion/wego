@@ -133,6 +133,7 @@ module Wego
         pull_params[:language] = params[:language] if params[:language]
         pull_params[:country_site_code] = params[:country_site_code] if params[:country_site_code]
         pull_params[:monetized_partners] = params[:monetized_partners] if params[:monetized_partners]
+        pull_params[:currency] = params[:currency] if params[:currency]
 
         # Adding a 10 second wait before the first pull as recommended by Wego
         sleep 10.0
